@@ -1,0 +1,15 @@
+# iroh-relay configuration for Hiroh. Keys checked against iroh-relay v1.0.0.
+# QUIC address discovery needs TLS and UDP 7842 on the relay host; off here,
+# because TLS ends at the reverse proxy.
+# Listen on IPv4 inside the container. The default, [::], fails on hosts
+# with IPv6 turned off.
+http_bind_addr = "0.0.0.0:3340"
+enable_quic_addr_discovery = false
+enable_metrics = false
+
+# Clients must present a token. relay-entrypoint.sh replaces this placeholder
+# line with the tokens from HIROH_RELAY_TOKENS at startup.
+access.shared_token = ["placeholder"]
+
+# No [limits] block: iroh-relay applies no rate limiting when it is absent,
+# which gives full throughput for large files.

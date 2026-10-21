@@ -1,0 +1,17 @@
+# Build output
+/target
+**/target
+web/dist
+web/src/wasm/pkg
+node_modules
+
+# Local settings and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and OS files
+.DS_Store
+.idea
+.vscode
+*.swp

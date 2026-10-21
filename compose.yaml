@@ -1,0 +1,68 @@
+# Hiroh: web app, iroh relay and access service on one hostname, with Caddy
+# in front. Works on any machine with Docker Compose.
+#
+#   cp .env.example .env      # then edit .env
+#   docker compose up -d --build
+#
+# The first build compiles Rust and WebAssembly and takes several minutes.
+# See README.md for the options, including running behind your own proxy.
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    environment:
+      HIROH_SITE_ADDRESS: ${HIROH_SITE_ADDRESS:?set HIROH_SITE_ADDRESS in .env}
+    ports:
+      - "${HIROH_HTTP_PORT:-80}:80"
+      - "${HIROH_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [web, relay, access]
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.web
+      args:
+        # Source code link shown in the app footer.
+        HIROH_SOURCE_URL: ${HIROH_SOURCE_URL:-https://github.com/Daimon-Law/hiroh}
+    image: hiroh-web:${HIROH_TAG:-latest}
+    restart: unless-stopped
+
+  relay:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.relay
+    image: hiroh-relay:${HIROH_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      # Relay tokens, "label:token" pairs separated by commas. Keep secret.
+      HIROH_RELAY_TOKENS: ${HIROH_RELAY_TOKENS:?set HIROH_RELAY_TOKENS in .env}
+      # The access service decides which devices may connect.
+      HIROH_ACCESS_URL: http://access:8081/check
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on: [access]
+
+  access:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.access
+    image: hiroh-access:${HIROH_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      HIROH_RELAY_TOKENS: ${HIROH_RELAY_TOKENS:?set HIROH_RELAY_TOKENS in .env}
+      # Relay address handed to approved guests.
+      HIROH_RELAY_URL: ${HIROH_PUBLIC_URL:?set HIROH_PUBLIC_URL in .env}
+      HIROH_MAX_GUEST_HOURS: ${HIROH_MAX_GUEST_HOURS:-168}
+      HIROH_DORMANT_HOURS: ${HIROH_DORMANT_HOURS:-24}
+      # Caddy sets X-Forwarded-For; see deploy/caddy/Caddyfile.
+      HIROH_CLIENT_IP_HEADERS: ${HIROH_CLIENT_IP_HEADERS:-x-forwarded-for}
+    volumes:
+      - access-data:/data
+
+volumes:
+  caddy-data:
+  caddy-config:
+  access-data:

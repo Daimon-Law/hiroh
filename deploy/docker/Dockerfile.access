@@ -1,0 +1,10 @@
+# Hiroh access service: relay access checks and guest invites. Plain Node, no
+# third-party packages.
+FROM node:22.11.0-alpine
+WORKDIR /app
+COPY --chmod=0644 deploy/access/server.mjs /app/server.mjs
+RUN mkdir -p /data && chown node:node /data
+USER node
+ENV PORT=8080 CHECK_PORT=8081 DATA_DIR=/data
+EXPOSE 8080 8081
+CMD ["node", "/app/server.mjs"]

@@ -1,0 +1,9 @@
+# iroh relay for Hiroh, behind a reverse proxy. TLS ends at the proxy; --dev
+# serves plain HTTP on :3340 inside the Docker network. relay-entrypoint.sh builds the
+# token list from HIROH_RELAY_TOKENS at start.
+FROM n0computer/iroh-relay:v1.0.0
+COPY deploy/docker/iroh-relay.toml /config/iroh-relay.toml
+COPY --chmod=755 deploy/docker/relay-entrypoint.sh /relay-entrypoint.sh
+EXPOSE 3340
+ENTRYPOINT ["/relay-entrypoint.sh"]
+CMD []

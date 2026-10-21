@@ -1,0 +1,84 @@
+# Hiroh behind an existing Traefik, instead of the bundled Caddy.
+# Use the same .env as the main compose file, plus TRAEFIK_NETWORK and
+# TRAEFIK_ENTRYPOINT. HIROH_SITE_ADDRESS and the port settings are not used.
+#
+#   docker compose -f deploy/traefik/compose.yaml --env-file .env up -d --build
+#
+# Run from the repository root. Traefik must already handle HTTPS for
+# HIROH_HOST on the entrypoint you name, and share the Docker network below.
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.web
+      args:
+        # Source code link shown in the app footer.
+        HIROH_SOURCE_URL: ${HIROH_SOURCE_URL:-https://github.com/Daimon-Law/hiroh}
+    image: hiroh-web:${HIROH_TAG:-latest}
+    restart: unless-stopped
+    networks: [proxy]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-proxy}"
+      - "traefik.http.routers.hiroh-web.rule=Host(`${HIROH_HOST:?set HIROH_HOST}`)"
+      - "traefik.http.routers.hiroh-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.hiroh-web.tls=true"
+      - "traefik.http.routers.hiroh-web.priority=10"
+      - "traefik.http.services.hiroh-web.loadbalancer.server.port=8080"
+
+  relay:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.relay
+    image: hiroh-relay:${HIROH_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      HIROH_RELAY_TOKENS: ${HIROH_RELAY_TOKENS:?set HIROH_RELAY_TOKENS}
+      HIROH_ACCESS_URL: http://access:8081/check
+      RUST_LOG: ${RUST_LOG:-info}
+    depends_on: [access]
+    networks: [proxy, internal]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-proxy}"
+      - "traefik.http.routers.hiroh-relay.rule=Host(`${HIROH_HOST:?set HIROH_HOST}`) && (PathPrefix(`/relay`) || Path(`/ping`) || Path(`/generate_204`) || Path(`/healthz`))"
+      - "traefik.http.routers.hiroh-relay.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.hiroh-relay.tls=true"
+      - "traefik.http.routers.hiroh-relay.priority=100"
+      - "traefik.http.services.hiroh-relay.loadbalancer.server.port=3340"
+
+  access:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/Dockerfile.access
+    image: hiroh-access:${HIROH_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      HIROH_RELAY_TOKENS: ${HIROH_RELAY_TOKENS:?set HIROH_RELAY_TOKENS}
+      HIROH_RELAY_URL: https://${HIROH_HOST:?set HIROH_HOST}/
+      HIROH_MAX_GUEST_HOURS: ${HIROH_MAX_GUEST_HOURS:-168}
+      HIROH_DORMANT_HOURS: ${HIROH_DORMANT_HOURS:-24}
+      # Traefik sets X-Forwarded-For; trust only what your Traefik sets.
+      HIROH_CLIENT_IP_HEADERS: ${HIROH_CLIENT_IP_HEADERS:-x-forwarded-for}
+    volumes:
+      - access-data:/data
+    networks: [proxy, internal]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=${TRAEFIK_NETWORK:-proxy}"
+      # Only the public API is routed. The relay check (port 8081) stays on
+      # the internal network.
+      - "traefik.http.routers.hiroh-access.rule=Host(`${HIROH_HOST:?set HIROH_HOST}`) && PathPrefix(`/api/`)"
+      - "traefik.http.routers.hiroh-access.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.hiroh-access.tls=true"
+      - "traefik.http.routers.hiroh-access.priority=100"
+      - "traefik.http.services.hiroh-access.loadbalancer.server.port=8080"
+
+volumes:
+  access-data:
+
+networks:
+  proxy:
+    name: ${TRAEFIK_NETWORK:-proxy}
+    external: true
+  internal: {}

@@ -1,0 +1,35 @@
+# Caddy routes the three Hiroh services on one hostname.
+#
+# HIROH_SITE_ADDRESS decides how Caddy listens:
+#   hiroh.example.com   Caddy gets a Let's Encrypt certificate itself and
+#                      serves HTTPS on 443 (ports 80 and 443 must be reachable)
+#   :80                plain HTTP, for when another reverse proxy or a tunnel
+#                      in front of Hiroh handles HTTPS
+{
+	servers {
+		# Accept X-Forwarded-For only from proxies on private networks, such
+		# as a reverse proxy or tunnel on the same machine or LAN. Caddy
+		# replaces the header for everyone else, so it cannot be faked.
+		trusted_proxies static private_ranges
+	}
+}
+
+{$HIROH_SITE_ADDRESS}
+
+encode zstd gzip
+
+# iroh relay: WebSocket connections and the probes clients use.
+@relay path /relay* /ping /generate_204 /healthz
+handle @relay {
+	reverse_proxy relay:3340
+}
+
+# Access service: invites, device registration, health.
+handle /api/* {
+	reverse_proxy access:8080
+}
+
+# Everything else is the web app.
+handle {
+	reverse_proxy web:8080
+}

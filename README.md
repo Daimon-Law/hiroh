@@ -3,6 +3,15 @@
 Self-hosted, end-to-end encrypted file and text sharing between your devices,
 in the browser.
 
+<p align="center">
+  <img src="docs/images/hero.png" alt="Hiroh on a laptop, showing paired devices, and on a phone, showing a conversation with two files received" width="900">
+</p>
+
+<p align="center">
+  <img src="docs/images/phones.png" alt="Pairing by QR code, accepting files from another device, and the dark theme" width="720"><br>
+  <sub>Pair with a QR code · Accept or decline every file · Light and dark themes</sub>
+</p>
+
 ## Requirements
 
 - Linux with Docker and Docker Compose v2. The first build needs about 1.5 GB

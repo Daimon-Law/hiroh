@@ -91,7 +91,10 @@ export function InviteSheet({ onClose }: { onClose: () => void }) {
 				else if (r.status !== 'open')
 					setState({
 						step: 'ended',
-						text: 'This invite has expired. Make a new one.',
+						text:
+							r.status === 'burned'
+								? 'This invite was closed after too many wrong PINs. Make a new one.'
+								: 'This invite has expired. Make a new one.',
 					})
 			} catch {
 				// Try again on the next tick.

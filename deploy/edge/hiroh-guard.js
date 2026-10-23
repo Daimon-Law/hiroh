@@ -5,10 +5,11 @@
 //   1. Storage & databases → KV → create a namespace, e.g. "hiroh-guard".
 //   2. Workers → create a Worker from this file. Settings → Bindings → add the
 //      KV namespace with the variable name GUARD.
-//   3. Settings → Domains & Routes → add the route  <your host>/*
-//   4. Exempt the relay so file transfers never pass through the Worker: add
-//      routes <your host>/relay*, <your host>/ping and <your host>/generate_204
-//      with no Worker (Workers Routes → "None").
+//   3. Settings → Domains & Routes → add the route  <your host>/api/*
+//      Only the API. A route on the whole host would also block the web app
+//      and relay for everyone behind a blocked address, such as a shared
+//      office or mobile NAT. The relay is never under /api, so file
+//      transfers do not pass through the Worker.
 //
 // The access service answers 404 to a wrong code and 429 when it is already
 // limiting a client. Each of those counts as a failure here.

@@ -7,10 +7,14 @@
 #                      in front of Hiroh handles HTTPS
 {
 	servers {
-		# Accept X-Forwarded-For only from proxies on private networks, such
-		# as a reverse proxy or tunnel on the same machine or LAN. Caddy
+		# Proxies whose X-Forwarded-For Caddy keeps (and appends to). Caddy
 		# replaces the header for everyone else, so it cannot be faked.
-		trusted_proxies static private_ranges
+		# Default: none but loopback. Do not trust all private ranges: every
+		# LAN client could then fake its address, and so could every internet
+		# client when Docker's userland proxy makes them appear as a gateway
+		# such as 172.17.0.1. Behind your own proxy or tunnel, set
+		# HIROH_CADDY_TRUSTED_PROXIES to that proxy's address(es).
+		trusted_proxies static {$HIROH_CADDY_TRUSTED_PROXIES:127.0.0.1/32}
 	}
 }
 

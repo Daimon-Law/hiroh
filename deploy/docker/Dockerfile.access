@@ -2,7 +2,7 @@
 # third-party packages.
 FROM node:22.11.0-alpine
 WORKDIR /app
-COPY --chmod=0644 deploy/access/server.mjs /app/server.mjs
+COPY --chmod=0644 deploy/access/server.mjs deploy/access/limits.mjs /app/
 RUN mkdir -p /data && chown node:node /data
 USER node
 ENV PORT=8080 CHECK_PORT=8081 DATA_DIR=/data

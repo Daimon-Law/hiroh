@@ -50,7 +50,7 @@ export function createInvite(hours: number) {
 
 export function pollInvite(id: string) {
 	return call<{
-		status: 'open' | 'expired' | 'gone'
+		status: 'open' | 'expired' | 'burned' | 'gone'
 		request: JoinRequest | null
 	}>('invites/poll', { token: token(), id })
 }

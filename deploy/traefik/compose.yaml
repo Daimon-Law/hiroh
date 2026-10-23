@@ -16,6 +16,10 @@ services:
         HIROH_SOURCE_URL: ${HIROH_SOURCE_URL:-https://github.com/Daimon-Law/hiroh}
     image: hiroh-web:${HIROH_TAG:-latest}
     restart: unless-stopped
+    environment:
+      # Content-Security-Policy: report (default), enforce or off.
+      HIROH_CSP: ${HIROH_CSP:-report}
+      HIROH_CSP_CONNECT_EXTRA: ${HIROH_CSP_CONNECT_EXTRA:-}
     networks: [proxy]
     labels:
       - "traefik.enable=true"
@@ -58,8 +62,13 @@ services:
       HIROH_RELAY_URL: https://${HIROH_HOST:?set HIROH_HOST}/
       HIROH_MAX_GUEST_HOURS: ${HIROH_MAX_GUEST_HOURS:-168}
       HIROH_DORMANT_HOURS: ${HIROH_DORMANT_HOURS:-24}
-      # Traefik sets X-Forwarded-For; trust only what your Traefik sets.
+      # Where the visitor's address comes from, for brute-force limits.
+      # Traefik appends the address it sees to X-Forwarded-For. Behind
+      # Cloudflare, use cf-connecting-ip instead. See "Client addresses" in
+      # README.md.
       HIROH_CLIENT_IP_HEADERS: ${HIROH_CLIENT_IP_HEADERS:-x-forwarded-for}
+      # Proxies allowed to set that header. Empty: private ranges.
+      HIROH_TRUSTED_PROXIES: ${HIROH_TRUSTED_PROXIES:-}
     volumes:
       - access-data:/data
     networks: [proxy, internal]

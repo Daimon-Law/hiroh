@@ -24,7 +24,10 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 # nginx runs as uid 101 here; make the config and site world-readable.
 USER root
 COPY deploy/docker/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --chmod=0755 deploy/docker/csp.sh /docker-entrypoint.d/15-hiroh-csp.sh
 COPY --from=build /src/web/dist /usr/share/nginx/html
-RUN chmod 644 /etc/nginx/conf.d/default.conf && chmod -R a+rX /usr/share/nginx/html
+# csp.sh rewrites hiroh-csp.conf at each start, as uid 101.
+RUN chmod 644 /etc/nginx/conf.d/default.conf && chmod -R a+rX /usr/share/nginx/html \
+ && touch /etc/nginx/hiroh-csp.conf && chown 101 /etc/nginx/hiroh-csp.conf
 USER 101
 EXPOSE 8080

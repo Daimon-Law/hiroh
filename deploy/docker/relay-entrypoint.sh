@@ -9,7 +9,7 @@
 # Commas, semicolons, spaces, tabs and line breaks all separate entries, and
 # quotes are ignored, so a list pasted from a terminal works as is.
 # A token may contain letters, digits and . _ ~ + / = - and must be at least
-# 16 characters long. An entry that breaks these rules is skipped with a
+# 24 characters long. (The access service also checks its entropy.) An entry that breaks these rules is skipped with a
 # warning. The relay starts only if at least one token is valid.
 # Generate a token with: openssl rand -hex 24
 #
@@ -39,8 +39,8 @@ add_token() {
 		return
 		;;
 	esac
-	if [ "${#token}" -lt 16 ]; then
-		echo "hiroh-relay: skipped '$label': token is shorter than 16 characters" >&2
+	if [ "${#token}" -lt 24 ]; then
+		echo "hiroh-relay: skipped '$label': token is shorter than 24 characters" >&2
 		skipped=$((skipped + 1))
 		return
 	fi
